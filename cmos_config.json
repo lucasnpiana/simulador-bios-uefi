@@ -1,0 +1,10 @@
+{
+  "boot_order": [
+    "HDD",
+    "NETWORK",
+    "FLOPPY",
+    "USB"
+  ],
+  "memory_kb": 1024,
+  "date": "2026-10-06"
+}

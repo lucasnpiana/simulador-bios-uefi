@@ -1,0 +1,20 @@
+# Ambiente virtual
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Arquivos gerados pela compilação
+*.bin
+*.o
+*.img
+
+# Logs do simulador
+uefi_log_*.txt
+
+# Editor / sistema
+.vscode/
+.DS_Store
+Thumbs.db
