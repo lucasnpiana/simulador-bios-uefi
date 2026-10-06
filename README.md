@@ -124,9 +124,10 @@ docker run --rm simulador-bios pytest
 - `cmos_config.json`: persistência das configurações CMOS/BIOS (ex.: ordem de boot)
 - `Dockerfile` e `Makefile`: automação de compilação e conteinerização
 
-### Autor
+### Autores
 
 [@lucasnpiana](https://github.com/lucasnpiana)
+[@felipenespolo](https://github.com/felipenespolo)
 
 ---
 
@@ -235,6 +236,7 @@ docker run --rm simulador-bios pytest
 - `cmos_config.json`: persisted CMOS/BIOS settings (e.g. boot order)
 - `Dockerfile` and `Makefile`: build and containerization automation
 
-### Author
+### Authors
 
 [@lucasnpiana](https://github.com/lucasnpiana)
+[@felipenespolo](https://github.com/felipenespolo)
