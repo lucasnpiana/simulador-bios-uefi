@@ -2,14 +2,12 @@
 
 # Simulador de BIOS / BIOS Simulator
 
-**Simulador de BIOS x86 com interface gráfica, registradores em C, POST, QEMU e Docker**
-**x86 BIOS simulator with a GUI, C registers, POST, QEMU and Docker**
+**Simulador acadêmico de BIOS/UEFI x86 em Python, com interface gráfica, POST, Secure Boot e QEMU opcional**
+**Academic x86 BIOS/UEFI simulator in Python, with a GUI, POST, Secure Boot and optional QEMU**
 
 <!-- BADGES: apague a abertura e o fechamento deste comentario para reativar
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
-![C](https://img.shields.io/badge/C-registers-00599C?logo=c&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-build-2496ED?logo=docker&logoColor=white)
-![QEMU](https://img.shields.io/badge/QEMU-emulator-FF6600?logo=qemu&logoColor=white)
+![QEMU](https://img.shields.io/badge/QEMU-optional-FF6600?logo=qemu&logoColor=white)
 ![Status](https://img.shields.io/badge/status-academic%20project-red)
 -->
 
@@ -21,31 +19,42 @@
 
 ## Português
 
-Protótipo de um emulador/simulador de BIOS x86 com interface gráfica (GUI), registradores implementados em C, verificação de POST e integração com QEMU e Docker.
+Simulador didático de BIOS/UEFI x86 em modo real, com interface gráfica (CustomTkinter). O núcleo é **100% Python** e roda sem nenhum software externo. O [QEMU](https://www.qemu.org/) é opcional e serve apenas para executar de verdade o `boot.bin`.
 
 <!-- ![Screenshot](docs/screenshot.png) -->
 
 ### Funcionalidades
 
-- Simulação de **POST** com log em tempo real e barra de progresso
-- Monitor de registradores (AX, BX, CX, DX, CS, IP) e endereço físico
-- **CMOS Setup** para escolher a ordem de boot, salva em `cmos_config.json`
-- Simulação de falha de RAM
-- Exportação do log do POST
-- Compilação do `boot.bin` via Docker e execução no **QEMU**
+- **CMOS / NVRAM Setup**: ordem de boot, modo de boot (UEFI ou Legacy) e Secure Boot, salvos em `cmos_config.json`
+- **POST** com log em tempo real, barra de progresso e leitura do RTC pelas portas de E/S `70h`/`71h`
+- **Injeção de falhas**: erro de checksum da CMOS, assinatura MBR inválida, teclado ausente e falha de RAM
+- **Secure Boot** por hash SHA-256 do `boot.bin`, gravado na CMOS na primeira execução
+- **Memory & IVT Viewer**: dump hexadecimal da RAM simulada de 1 MB e vetores das interrupções INT 10h, 13h e 16h
+- **MBR Inspector**: tamanho do setor, assinatura `0x55AA`, tabela de partições e desmontagem simplificada
+- **Boot Timeline**: as 5 etapas da inicialização, destacadas em tempo real
+- **CPU Registers**: AX, BX, CX, DX, CS, IP e endereço físico
+- **Hardware Monitor**: temperatura, ventoinha e tensões (valores fictícios do `hardware_map.json`)
+- **Aba Documentação**: explica cada seção, indica o que é simulado e traz um roteiro de experimentos para aula
+- **Modo console** (`main.py`) e **testes automatizados** do núcleo (`pytest`)
+
+### O que é Python e o que depende do QEMU
+
+| Recurso | Implementação |
+|---|---|
+| CMOS, POST, falhas, Secure Boot | Simulação em Python |
+| RAM, IVT, registradores, interrupções | Simulação em Python |
+| Análise e desmontagem do MBR | Python (apenas alguns opcodes) |
+| Hardware Monitor | Dados estáticos em JSON |
+| **BOOT EXECUTE** (execução real do `boot.bin`) | **QEMU** (opcional) |
+
+Sem o QEMU, o **BOOT EXECUTE** apenas valida o bootloader e registra no log que ele foi entregue em `0x7C00`. O conteúdo do `boot.bin` não é copiado para a RAM simulada nem executado pelo Python.
 
 ### Pré-requisitos
 
-**Windows**
-- Python 3.10+ (com `pip` e `venv`)
-- QEMU (opcional, para executar o bootloader `boot.bin`)
-- GCC / MinGW / MSYS2 (opcional, para recompilar a biblioteca C `registers.dll`)
-- Docker Desktop (para o botão **BOOT EXECUTE**)
-
-**Linux (Ubuntu / Debian / Arch / Fedora)**
-- Python 3.10+ (com `python3-venv` e `python3-pip`)
-- QEMU (`qemu-system-x86`)
-- GCC / Make (para compilar a biblioteca C `registers.so`)
+- Python 3.10+
+- `customtkinter` e `pytest` (`pip install customtkinter pytest`)
+- `tkinter` (já incluso no Python do Windows; no Linux: `sudo apt install python3-tk`)
+- QEMU (opcional): `qemu-system-x86_64` ou `qemu-system-i386` disponível no `PATH`
 
 ### Como executar no Windows
 
@@ -75,8 +84,9 @@ Protótipo de um emulador/simulador de BIOS x86 com interface gráfica (GUI), re
 1. Instale as dependências do sistema (Ubuntu/Debian):
    ```bash
    sudo apt update
-   sudo apt install python3-venv python3-pip qemu-system-x86 build-essential -y
+   sudo apt install python3-venv python3-pip python3-tk qemu-system-x86 -y
    ```
+   > O QEMU é opcional; omita `qemu-system-x86` se não for usá-lo.
 2. Crie e ative o ambiente virtual:
    ```bash
    python3 -m venv venv
@@ -86,43 +96,32 @@ Protótipo de um emulador/simulador de BIOS x86 com interface gráfica (GUI), re
    ```bash
    pip install customtkinter pytest
    ```
-4. Compile a biblioteca C (se necessário):
-   ```bash
-   make
-   # ou manualmente:
-   gcc -shared -o registers.so -fPIC registers.c
-   ```
-5. Execute a interface gráfica e os testes:
+4. Execute a interface gráfica, o modo console e os testes:
    ```bash
    python3 bios_gui.py
+   python3 main.py
    pytest
    ```
 
-### Como executar via Docker
+### Preparando o `boot.bin`
 
-O botão **BOOT EXECUTE** da interface usa a imagem `sys-compilador` para compilar o `boot.bin`. Gere-a uma vez:
-
-```bash
-docker build -t sys-compilador .
-```
-
-Para o ambiente isolado completo:
+O POST precisa de uma imagem `boot.bin` de **exatamente 512 bytes**, terminada em `55 AA`, na pasta do projeto. Você pode usar o botão **Select boot.bin** da aba MBR Inspector para escolher outro arquivo, ou gerar uma imagem de teste:
 
 ```bash
-docker build -t simulador-bios .
-docker run -it --rm simulador-bios
-docker run --rm simulador-bios pytest
+python -c "d=bytearray(512); d[0:5]=b'\xFA\xB8\x34\x12\xF4'; d[510:512]=b'\x55\xAA'; open('boot.bin','wb').write(d)"
 ```
+
+Essa imagem contém `CLI`, `MOV AX, 0x1234` e `HLT`. O projeto inclui o `boot.asm`. Para regenerar o `boot.bin` a partir dele, instale o [NASM](https://www.nasm.us/) e execute `nasm -f bin boot.asm -o boot.bin`.
 
 ### Estrutura do projeto
 
-- `bios_gui.py`: interface gráfica interativa (CustomTkinter)
-- `bios_core.py`: lógica central do simulador e rotinas de POST
+- `bios_gui.py`: interface gráfica (CustomTkinter), incluindo a aba Documentação
+- `bios_core.py`: núcleo do simulador (CPU, RAM, IVT, CMOS, POST, Secure Boot e MBR), sem dependência da interface
 - `main.py`: ponto de entrada em modo console
-- `registers.c` / `registers.h`: manipulação dos registradores simulados, em C
-- `boot.asm` / `boot.bin`: código Assembly e imagem do bootloader simulado
-- `cmos_config.json`: persistência das configurações CMOS/BIOS (ex.: ordem de boot)
-- `Dockerfile` e `Makefile`: automação de compilação e conteinerização
+- `test_bios_core.py`: testes automatizados do núcleo (`pytest`)
+- `boot.asm` / `boot.bin`: código Assembly e imagem do setor de boot usada pelo simulador
+- `cmos_config.json`: configurações da CMOS (criado ao salvar o Setup)
+- `hardware_map.json`: dados do Hardware Monitor (criado com valores padrão na primeira execução)
 
 ### Autores
 
@@ -133,31 +132,42 @@ docker run --rm simulador-bios pytest
 
 ## English
 
-A prototype of an x86 BIOS emulator/simulator with a graphical interface (GUI), registers implemented in C, POST verification, and QEMU and Docker integration.
+An educational x86 real-mode BIOS/UEFI simulator with a graphical interface (CustomTkinter). The core is **100% Python** and runs without any external software. [QEMU](https://www.qemu.org/) is optional and is only used to actually execute `boot.bin`.
 
 <!-- ![Screenshot](docs/screenshot.png) -->
 
 ### Features
 
-- **POST** simulation with a live log and progress bar
-- Register monitor (AX, BX, CX, DX, CS, IP) and physical address
-- **CMOS Setup** to choose the boot order, stored in `cmos_config.json`
-- RAM failure simulation
-- POST log export
-- `boot.bin` build through Docker and execution on **QEMU**
+- **CMOS / NVRAM Setup**: boot order, boot mode (UEFI or Legacy) and Secure Boot, stored in `cmos_config.json`
+- **POST** with a live log, progress bar and RTC reads through I/O ports `70h`/`71h`
+- **Fault injection**: CMOS checksum error, invalid MBR signature, missing keyboard and RAM failure
+- **Secure Boot** based on the SHA-256 hash of `boot.bin`, stored in the CMOS on first run
+- **Memory & IVT Viewer**: hex dump of the 1 MB simulated RAM and the INT 10h, 13h and 16h vectors
+- **MBR Inspector**: sector size, `0x55AA` signature, partition table and simplified disassembly
+- **Boot Timeline**: the 5 boot stages, highlighted in real time
+- **CPU Registers**: AX, BX, CX, DX, CS, IP and physical address
+- **Hardware Monitor**: temperature, fan and voltages (fictitious values from `hardware_map.json`)
+- **Documentation tab**: explains every section, states what is simulated, and includes a classroom experiment guide
+- **Console mode** (`main.py`) and **automated tests** for the core (`pytest`)
+
+### What is Python and what needs QEMU
+
+| Feature | Implementation |
+|---|---|
+| CMOS, POST, faults, Secure Boot | Python simulation |
+| RAM, IVT, registers, interrupts | Python simulation |
+| MBR analysis and disassembly | Python (only a few opcodes) |
+| Hardware Monitor | Static JSON data |
+| **BOOT EXECUTE** (real execution of `boot.bin`) | **QEMU** (optional) |
+
+Without QEMU, **BOOT EXECUTE** only validates the bootloader and logs that it was handed over at `0x7C00`. The contents of `boot.bin` are neither copied into the simulated RAM nor executed by Python.
 
 ### Prerequisites
 
-**Windows**
-- Python 3.10+ (with `pip` and `venv`)
-- QEMU (optional, to run the `boot.bin` bootloader)
-- GCC / MinGW / MSYS2 (optional, to rebuild the C library `registers.dll`)
-- Docker Desktop (for the **BOOT EXECUTE** button)
-
-**Linux (Ubuntu / Debian / Arch / Fedora)**
-- Python 3.10+ (with `python3-venv` and `python3-pip`)
-- QEMU (`qemu-system-x86`)
-- GCC / Make (to build the C library `registers.so`)
+- Python 3.10+
+- `customtkinter` and `pytest` (`pip install customtkinter pytest`)
+- `tkinter` (bundled with Python on Windows; on Linux: `sudo apt install python3-tk`)
+- QEMU (optional): `qemu-system-x86_64` or `qemu-system-i386` available on the `PATH`
 
 ### Running on Windows
 
@@ -168,7 +178,7 @@ A prototype of an x86 BIOS emulator/simulator with a graphical interface (GUI), 
    .\venv\Scripts\Activate.ps1
    ```
    > If you get a permission error, run first: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
-3. Install dependencies:
+3. Install the dependencies:
    ```powershell
    pip install customtkinter pytest
    ```
@@ -187,54 +197,44 @@ A prototype of an x86 BIOS emulator/simulator with a graphical interface (GUI), 
 1. Install system dependencies (Ubuntu/Debian):
    ```bash
    sudo apt update
-   sudo apt install python3-venv python3-pip qemu-system-x86 build-essential -y
+   sudo apt install python3-venv python3-pip python3-tk qemu-system-x86 -y
    ```
+   > QEMU is optional; omit `qemu-system-x86` if you will not use it.
 2. Create and activate the virtual environment:
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    ```
-3. Install dependencies:
+3. Install the dependencies:
    ```bash
    pip install customtkinter pytest
    ```
-4. Build the C library (if needed):
-   ```bash
-   make
-   # or manually:
-   gcc -shared -o registers.so -fPIC registers.c
-   ```
-5. Run the GUI and the tests:
+4. Run the graphical interface, the console mode and the tests:
    ```bash
    python3 bios_gui.py
+   python3 main.py
    pytest
    ```
 
-### Running with Docker
+### Preparing `boot.bin`
 
-The interface's **BOOT EXECUTE** button uses the `sys-compilador` image to build `boot.bin`. Build it once:
-
-```bash
-docker build -t sys-compilador .
-```
-
-For the full isolated environment:
+POST needs a `boot.bin` image of **exactly 512 bytes**, ending in `55 AA`, in the project folder. You can use the **Select boot.bin** button in the MBR Inspector tab to pick another file, or generate a test image:
 
 ```bash
-docker build -t simulador-bios .
-docker run -it --rm simulador-bios
-docker run --rm simulador-bios pytest
+python -c "d=bytearray(512); d[0:5]=b'\xFA\xB8\x34\x12\xF4'; d[510:512]=b'\x55\xAA'; open('boot.bin','wb').write(d)"
 ```
+
+This image contains `CLI`, `MOV AX, 0x1234` and `HLT`. The project includes `boot.asm`. To regenerate `boot.bin` from it, install [NASM](https://www.nasm.us/) and run `nasm -f bin boot.asm -o boot.bin`.
 
 ### Project structure
 
-- `bios_gui.py`: interactive graphical interface (CustomTkinter)
-- `bios_core.py`: core simulator logic and POST routines
+- `bios_gui.py`: graphical interface (CustomTkinter), including the Documentation tab
+- `bios_core.py`: simulator core (CPU, RAM, IVT, CMOS, POST, Secure Boot and MBR), independent of the GUI
 - `main.py`: console-mode entry point
-- `registers.c` / `registers.h`: simulated register handling, written in C
-- `boot.asm` / `boot.bin`: Assembly source and image of the simulated bootloader
-- `cmos_config.json`: persisted CMOS/BIOS settings (e.g. boot order)
-- `Dockerfile` and `Makefile`: build and containerization automation
+- `test_bios_core.py`: automated tests for the core (`pytest`)
+- `boot.asm` / `boot.bin`: Assembly source and boot sector image used by the simulator
+- `cmos_config.json`: CMOS settings (created when the Setup is saved)
+- `hardware_map.json`: Hardware Monitor data (created with defaults on first run)
 
 ### Authors
 
