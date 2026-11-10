@@ -1,0 +1,26 @@
+{
+  "cpu": "x86-64 Simulated Processor @ 3.40 GHz",
+  "ram_total_mb": 8192,
+  "storage_devices": [
+    {
+      "slot": "SATA 0",
+      "type": "SSD",
+      "model": "Simulated SSD 256GB",
+      "status": "OK"
+    },
+    {
+      "slot": "SATA 1",
+      "type": "HDD",
+      "model": "Simulated HDD 1TB",
+      "status": "OK"
+    }
+  ],
+  "gpu": "VGA Compatible Graphics Controller",
+  "fan_rpm": 2200,
+  "cpu_temp_celsius": 42.5,
+  "voltages": {
+    "v3_3": 3.31,
+    "v5_0": 5.02,
+    "v12_0": 12.05
+  }
+}

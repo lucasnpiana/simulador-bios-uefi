@@ -5,6 +5,11 @@
     "FLOPPY",
     "USB"
   ],
+  "boot_mode": "UEFI",
+  "secure_boot": true,
+  "secure_boot_hash": "369227922d291725e2b125d02bb5a425965acebdf6ecdbeeb08abb93f70da2ff",
   "memory_kb": 1024,
-  "date": "2026-10-06"
+  "date": "2026-10-06",
+  "supervisor_password": "",
+  "boot_password_enabled": false
 }

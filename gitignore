@@ -5,11 +5,16 @@ venv/
 # Python
 __pycache__/
 *.pyc
+.pytest_cache/
 
 # Arquivos gerados pela compilação
 *.bin
+!boot.bin
 *.o
 *.img
+
+# Estado gerado pelo simulador (hash do Secure Boot, falhas armadas)
+cmos_config.json
 
 # Logs do simulador
 uefi_log_*.txt
