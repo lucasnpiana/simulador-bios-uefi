@@ -5,11 +5,9 @@
 **Simulador acadêmico de BIOS/UEFI x86 em Python, com interface gráfica, POST, Secure Boot e QEMU opcional**
 **Academic x86 BIOS/UEFI simulator in Python, with a GUI, POST, Secure Boot and optional QEMU**
 
-<!-- BADGES: apague a abertura e o fechamento deste comentario para reativar
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
 ![QEMU](https://img.shields.io/badge/QEMU-optional-FF6600?logo=qemu&logoColor=white)
 ![Status](https://img.shields.io/badge/status-academic%20project-red)
--->
 
 [Português](#português) · [English](#english)
 
@@ -52,7 +50,7 @@ Sem o QEMU, o **BOOT EXECUTE** apenas valida o bootloader e registra no log que 
 ### Pré-requisitos
 
 - Python 3.10+
-- `customtkinter` e `pytest` (`pip install customtkinter pytest`)
+- `customtkinter`, `rich` e `pytest` (`pip install customtkinter rich pytest`)
 - `tkinter` (já incluso no Python do Windows; no Linux: `sudo apt install python3-tk`)
 - QEMU (opcional): `qemu-system-x86_64` ou `qemu-system-i386` disponível no `PATH`
 
@@ -67,7 +65,7 @@ Sem o QEMU, o **BOOT EXECUTE** apenas valida o bootloader e registra no log que 
    > Se ocorrer erro de permissão, execute antes: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
 3. Instale as dependências:
    ```powershell
-   pip install customtkinter pytest
+   pip install customtkinter rich pytest
    ```
 4. Execute a interface gráfica:
    ```powershell
@@ -94,7 +92,7 @@ Sem o QEMU, o **BOOT EXECUTE** apenas valida o bootloader e registra no log que 
    ```
 3. Instale as dependências:
    ```bash
-   pip install customtkinter pytest
+   pip install customtkinter rich pytest
    ```
 4. Execute a interface gráfica, o modo console e os testes:
    ```bash
@@ -105,13 +103,17 @@ Sem o QEMU, o **BOOT EXECUTE** apenas valida o bootloader e registra no log que 
 
 ### Preparando o `boot.bin`
 
-O POST precisa de uma imagem `boot.bin` de **exatamente 512 bytes**, terminada em `55 AA`, na pasta do projeto. Você pode usar o botão **Select boot.bin** da aba MBR Inspector para escolher outro arquivo, ou gerar uma imagem de teste:
+O POST precisa de uma imagem `boot.bin` de **exatamente 512 bytes**, terminada em `55 AA`, na pasta do projeto. Você pode usar o botão **Select boot.bin** da aba MBR Inspector para escolher outro arquivo, ou gerar uma imagem mínima de teste (`CLI`, `MOV AX, 0x1234` e `HLT`):
 
 ```bash
 python -c "d=bytearray(512); d[0:5]=b'\xFA\xB8\x34\x12\xF4'; d[510:512]=b'\x55\xAA'; open('boot.bin','wb').write(d)"
 ```
 
-Essa imagem contém `CLI`, `MOV AX, 0x1234` e `HLT`. O projeto inclui o `boot.asm`. Para regenerar o `boot.bin` a partir dele, instale o [NASM](https://www.nasm.us/) e execute `nasm -f bin boot.asm -o boot.bin`.
+O repositório já inclui o `boot.asm` completo (que exibe uma mensagem de boot via `INT 10h`). Para recompilar o `boot.bin` a partir dele, instale o [NASM](https://www.nasm.us/) e execute:
+
+```bash
+nasm -f bin boot.asm -o boot.bin
+```
 
 ### Estrutura do projeto
 
@@ -125,11 +127,10 @@ Essa imagem contém `CLI`, `MOV AX, 0x1234` e `HLT`. O projeto inclui o `boot.as
 
 ### Autores
 
-[@lucasnpiana](https://github.com/lucasnpiana)
-[@felipenespolo](https://github.com/felipenespolo)
-[@arthurfelini](https://github.com/feliniarthur)
-[@gabrielandreis](https://github.com/gabriel-2823)
-
+- [@lucasnpiana](https://github.com/lucasnpiana)
+- [@felipenespolo](https://github.com/felipenespolo)
+- [@arthurfelini](https://github.com/feliniarthur)
+- [@gabrielandreis](https://github.com/gabriel-2823)
 
 ---
 
@@ -168,7 +169,7 @@ Without QEMU, **BOOT EXECUTE** only validates the bootloader and logs that it wa
 ### Prerequisites
 
 - Python 3.10+
-- `customtkinter` and `pytest` (`pip install customtkinter pytest`)
+- `customtkinter`, `rich` and `pytest` (`pip install customtkinter rich pytest`)
 - `tkinter` (bundled with Python on Windows; on Linux: `sudo apt install python3-tk`)
 - QEMU (optional): `qemu-system-x86_64` or `qemu-system-i386` available on the `PATH`
 
@@ -183,7 +184,7 @@ Without QEMU, **BOOT EXECUTE** only validates the bootloader and logs that it wa
    > If you get a permission error, run first: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
 3. Install the dependencies:
    ```powershell
-   pip install customtkinter pytest
+   pip install customtkinter rich pytest
    ```
 4. Run the graphical interface:
    ```powershell
@@ -210,7 +211,7 @@ Without QEMU, **BOOT EXECUTE** only validates the bootloader and logs that it wa
    ```
 3. Install the dependencies:
    ```bash
-   pip install customtkinter pytest
+   pip install customtkinter rich pytest
    ```
 4. Run the graphical interface, the console mode and the tests:
    ```bash
@@ -221,13 +222,17 @@ Without QEMU, **BOOT EXECUTE** only validates the bootloader and logs that it wa
 
 ### Preparing `boot.bin`
 
-POST needs a `boot.bin` image of **exactly 512 bytes**, ending in `55 AA`, in the project folder. You can use the **Select boot.bin** button in the MBR Inspector tab to pick another file, or generate a test image:
+POST needs a `boot.bin` image of **exactly 512 bytes**, ending in `55 AA`, in the project folder. You can use the **Select boot.bin** button in the MBR Inspector tab to pick another file, or generate a minimal test image (`CLI`, `MOV AX, 0x1234` and `HLT`):
 
 ```bash
 python -c "d=bytearray(512); d[0:5]=b'\xFA\xB8\x34\x12\xF4'; d[510:512]=b'\x55\xAA'; open('boot.bin','wb').write(d)"
 ```
 
-This image contains `CLI`, `MOV AX, 0x1234` and `HLT`. The project includes `boot.asm`. To regenerate `boot.bin` from it, install [NASM](https://www.nasm.us/) and run `nasm -f bin boot.asm -o boot.bin`.
+The repository already includes `boot.asm` (which prints a boot message via `INT 10h`). To rebuild `boot.bin` from it, install [NASM](https://www.nasm.us/) and run:
+
+```bash
+nasm -f bin boot.asm -o boot.bin
+```
 
 ### Project structure
 
@@ -241,7 +246,7 @@ This image contains `CLI`, `MOV AX, 0x1234` and `HLT`. The project includes `boo
 
 ### Authors
 
-[@lucasnpiana](https://github.com/lucasnpiana)
-[@felipenespolo](https://github.com/felipenespolo)
-[@arthurfelini](https://github.com/feliniarthur)
-[@gabrielandreis](https://github.com/gabriel-2823)
+- [@lucasnpiana](https://github.com/lucasnpiana)
+- [@felipenespolo](https://github.com/felipenespolo)
+- [@arthurfelini](https://github.com/feliniarthur)
+- [@gabrielandreis](https://github.com/gabriel-2823)
