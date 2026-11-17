@@ -211,8 +211,16 @@ class BiosSimulatorApp(ctk.CTk):
         ctk.CTkLabel(parent, text=f"[ {title} ]", font=(FONT, 14, "bold"), text_color=RED).pack(anchor="w", padx=12, pady=(10, 5))
 
     def _build_setup_tab(self, parent):
-        self._section(parent, "CMOS / NVRAM SETUP")
-        form = ctk.CTkFrame(parent, fg_color="transparent")
+        # Divide a aba em duas colunas: controles na esquerda e terminal no meio
+        left_col = ctk.CTkFrame(parent, fg_color="transparent")
+        left_col.pack(side="left", fill="y", padx=(4, 10), pady=4)
+
+        right_col = ctk.CTkFrame(parent, fg_color="transparent")
+        right_col.pack(side="left", fill="both", expand=True, padx=(0, 8), pady=4)
+
+        # --- COLUNA DA ESQUERDA (Configurações e Botões) ---
+        self._section(left_col, "CMOS / NVRAM SETUP")
+        form = ctk.CTkFrame(left_col, fg_color="transparent")
         form.pack(fill="x", padx=15)
         ctk.CTkLabel(form, text="1st Boot Device", text_color=WHITE).grid(row=0, column=0, sticky="w", pady=5)
         self.combo_boot = ctk.CTkComboBox(form, values=list(BOOT_DEVICE_LABELS.values()), width=230)
@@ -222,12 +230,14 @@ class BiosSimulatorApp(ctk.CTk):
         self.combo_mode = ctk.CTkComboBox(form, values=["UEFI", "LEGACY"], width=230)
         self.combo_mode.grid(row=1, column=1, padx=12, pady=5, sticky="w")
         self.combo_mode.set(self.config_data.get("boot_mode", "UEFI"))
+
         self.secure_var = ctk.BooleanVar(value=self.config_data.get("secure_boot", True))
-        ctk.CTkCheckBox(parent, text="Enable UEFI Secure Boot", variable=self.secure_var, text_color=WHITE, fg_color=RED).pack(anchor="w", padx=18, pady=5)
+        ctk.CTkCheckBox(left_col, text="Enable UEFI Secure Boot", variable=self.secure_var, text_color=WHITE, fg_color=RED).pack(anchor="w", padx=18, pady=5)
         self.ram_fail_var = ctk.BooleanVar(value=False)
-        ctk.CTkCheckBox(parent, text="Simulate RAM Failure (POST)", variable=self.ram_fail_var, text_color=WHITE, fg_color=RED).pack(anchor="w", padx=18, pady=5)
+        ctk.CTkCheckBox(left_col, text="Simulate RAM Failure (POST)", variable=self.ram_fail_var, text_color=WHITE, fg_color=RED).pack(anchor="w", padx=18, pady=5)
+
         faults = self.config_data.get("fault_injection", {})
-        fault_frame = ctk.CTkFrame(parent, fg_color="#171717")
+        fault_frame = ctk.CTkFrame(left_col, fg_color="#171717")
         fault_frame.pack(fill="x", padx=12, pady=10)
         self.cmos_fault_var = ctk.BooleanVar(value=faults.get("cmos_checksum_error", False))
         self.mbr_fault_var = ctk.BooleanVar(value=faults.get("invalid_mbr_signature", False))
@@ -237,13 +247,13 @@ class BiosSimulatorApp(ctk.CTk):
                            ("Invalid MBR Signature (55 AA)", self.mbr_fault_var),
                            ("Keyboard Missing", self.keyboard_fault_var)):
             ctk.CTkCheckBox(fault_frame, text=label, variable=var, text_color=WHITE, fg_color=RED).pack(anchor="w", padx=15, pady=4)
-        ctk.CTkButton(parent, text="[ SAVE CMOS SETUP ]", command=self._save_cmos, fg_color=DARK_RED, hover_color=RED).pack(anchor="w", padx=15, pady=8)
-        self.status_label = ctk.CTkLabel(parent, text="", text_color=GREEN)
+
+        ctk.CTkButton(left_col, text="[ SAVE CMOS SETUP ]", command=self._save_cmos, fg_color=DARK_RED, hover_color=RED).pack(anchor="w", padx=15, pady=8)
+        self.status_label = ctk.CTkLabel(left_col, text="", text_color=GREEN, wraplength=350, justify="left")
         self.status_label.pack(anchor="w", padx=15)
-        # Os controles ficam antes do terminal expansível para não serem
-        # empurrados para fora da área visível em janelas menores.
-        controls = ctk.CTkFrame(parent, fg_color="transparent")
-        controls.pack(fill="x", padx=12, pady=(8, 3))
+
+        controls = ctk.CTkFrame(left_col, fg_color="transparent")
+        controls.pack(fill="x", padx=12, pady=(12, 4))
         self.power_btn = ctk.CTkButton(
             controls, text="[ POWER ON (POST) ]", command=self._start_post,
             fg_color=RED, hover_color=DARK_RED, height=34
@@ -255,13 +265,14 @@ class BiosSimulatorApp(ctk.CTk):
         )
         self.boot_btn.pack(side="left", padx=5)
 
-        self.progress = ctk.CTkProgressBar(parent, progress_color=YELLOW)
-        self.progress.pack(fill="x", padx=12, pady=(3, 6))
+        self.progress = ctk.CTkProgressBar(left_col, progress_color=YELLOW)
+        self.progress.pack(fill="x", padx=12, pady=(6, 6))
         self.progress.set(0)
 
-        self._section(parent, "POST TERMINAL & BIOS LOG")
-        self.logs = ctk.CTkTextbox(parent, font=(MONO, 11), fg_color="#000000", text_color=GREEN)
-        self.logs.pack(fill="both", expand=True, padx=12, pady=(4, 8))
+        # --- COLUNA CENTRAL (Terminal ocupando toda a altura e largura livre) ---
+        self._section(right_col, "POST TERMINAL & BIOS LOG")
+        self.logs = ctk.CTkTextbox(right_col, font=(MONO, 11), fg_color="#000000", text_color=GREEN)
+        self.logs.pack(fill="both", expand=True, padx=8, pady=(4, 8))
         self.logs.insert("end", "System Halted. Press POWER ON to start POST.\n")
 
     def _build_side_panel(self, parent):
@@ -526,12 +537,13 @@ class BiosSimulatorApp(ctk.CTk):
         qemu = shutil.which("qemu-system-x86_64") or shutil.which("qemu-system-i386")
         if qemu and os.path.isfile(boot_path):
             try:
-                subprocess.Popen([qemu, "-drive", f"file={boot_path},format=raw"], cwd=BASE_DIR)
-                self._log("QEMU externo iniciado.")
-                return
+                subprocess.Popen([qemu, "-drive", f"file={boot_path},format=raw"])
+                self._log(f"[QEMU] Executando boot.bin via {os.path.basename(qemu)}...")
             except OSError as exc:
-                self._log(f"QEMU indisponível ({exc}); mantendo simulação nativa.")
-        self._log("[SIMULADOR NATIVO] Bootloader validado e entregue em 0x7C00.")
+                self._log(f"[ERRO QEMU] Falha ao iniciar emulador: {exc}")
+        else:
+            self._log("[SIMULADOR NATIVO] Bootloader validado e entregue em 0x7C00 (QEMU não encontrado).")
+
 
 if __name__ == "__main__":
     app = BiosSimulatorApp()
