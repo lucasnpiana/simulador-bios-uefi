@@ -103,9 +103,10 @@ def test_peek_poke_memory_roundtrip():
 
 
 def test_peek_memory_endereco_fora_do_limite_nao_estoura():
-    """Endereço além de 1 MB precisa retornar 0 com segurança,
-    não travar o programa."""
-    assert bios_core.peek_memory(0xFFFFFFFF) == 0
+    """Endereço além de 1 MB precisa lançar ValueError com segurança,
+    não estourar o buffer."""
+    with pytest.raises(ValueError):
+        bios_core.peek_memory(0xFFFFFFFF)
 
 
 # --- testes de validação de configuração --------------------------------
@@ -148,7 +149,8 @@ def test_save_config_grava_e_load_config_le_de_volta(temp_config_file):
 
     assert os.path.exists(temp_config_file)
     config_lida = bios_core.load_config()
-    assert config_lida == config
+    esperado = {**bios_core.DEFAULT_CONFIG, **config}
+    assert config_lida == esperado
 
 
 def test_save_config_rejeita_config_invalida(temp_config_file):
@@ -172,3 +174,4 @@ def test_load_config_com_arquivo_corrompido_retorna_padrao(temp_config_file):
 
     config = bios_core.load_config()
     assert config == bios_core.DEFAULT_CONFIG
+    
