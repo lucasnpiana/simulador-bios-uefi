@@ -127,6 +127,9 @@ Essa imagem contém `CLI`, `MOV AX, 0x1234` e `HLT`. O projeto inclui o `boot.as
 
 [@lucasnpiana](https://github.com/lucasnpiana)
 [@felipenespolo](https://github.com/felipenespolo)
+[@arthurfelini]((https://github.com/feliniarthur))
+[@gabrielandreis]((https://github.com/gabriel-2823))
+
 
 ---
 
